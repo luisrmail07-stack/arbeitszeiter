@@ -1,0 +1,38 @@
+{
+    "name": "Work Tracker",
+    "short_name": "WorkTracker",
+    "description": "Track your work time, manage projects, and monitor productivity",
+    "start_url": "/index.html",
+    "display": "standalone",
+    "background_color": "#101922",
+    "theme_color": "#2b8cee",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect fill='%232b8cee' width='192' height='192' rx='48'/%3E%3Cpath fill='%23fff' d='M96 48c-26.5 0-48 21.5-48 48s21.5 48 48 48 48-21.5 48-48-21.5-48-48-48zm0 12c19.9 0 36 16.1 36 36s-16.1 36-36 36-36-16.1-36-36 16.1-36 36-36zm-6 18v24l20 12 4-6-18-11V78z'/%3E%3C/svg%3E",
+            "sizes": "192x192",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect fill='%232b8cee' width='512' height='512' rx='128'/%3E%3Cpath fill='%23fff' d='M256 128c-70.7 0-128 57.3-128 128s57.3 128 128 128 128-57.3 128-128-57.3-128-128-128zm0 32c53.0 0 96 43.0 96 96s-43.0 96-96 96-96-43.0-96-96 43.0-96 96-96zm-16 48v64l53 32 11-16-48-29V208z'/%3E%3C/svg%3E",
+            "sizes": "512x512",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ],
+    "categories": [
+        "productivity",
+        "utilities"
+    ],
+    "screenshots": [],
+    "shortcuts": [
+        {
+            "name": "Punch In",
+            "short_name": "Punch In",
+            "description": "Start tracking time",
+            "url": "/index.html?action=punchin",
+            "icons": []
+        }
+    ]
+}

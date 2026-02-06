@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Work Tracker Dashboard</title>
+    <meta name="description" content="Track your work time, manage projects, and monitor productivity">
+    <meta name="theme-color" content="#101922">
+    <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2b8cee",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Manrope', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            min-height: max(884px, 100dvh);
+        }
+
+        .glow-blue {
+            box-shadow: 0 0 20px 2px rgba(43, 142, 238, 0.4);
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+
+            0%,
+            100% {
+                box-shadow: 0 0 20px 2px rgba(43, 142, 238, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 30px 4px rgba(43, 142, 238, 0.6);
+            }
+        }
+
+        .ios-blur {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #2b8cee;
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .modal-content {
+            background: #1c2630;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 90%;
+            width: 400px;
+            animation: scaleIn 0.2s ease-out;
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white min-h-screen font-display">
+
+    <!-- Header Section -->
+    <header class="flex items-center justify-between px-6 pt-12 pb-6">
+        <div class="flex items-center gap-3">
+            <div class="size-10 rounded-full bg-slate-200 dark:bg-slate-800 border-2 border-primary overflow-hidden cursor-pointer hover:scale-110 transition-transform"
+                onclick="app.showSettings()">
+                <div id="userAvatar"
+                    class="w-full h-full flex items-center justify-center text-lg font-bold text-primary">AJ</div>
+            </div>
+            <div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wider">Welcome back
+                </p>
+                <h1 id="userName" class="text-lg font-bold">Alex Johnson</h1>
+            </div>
+        </div>
+        <button id="themeToggle"
+            class="relative p-2 rounded-full bg-white dark:bg-slate-800 shadow-sm hover:scale-110 transition-transform"
+            onclick="app.toggleTheme()">
+            <span class="material-symbols-outlined text-slate-600 dark:text-slate-300">dark_mode</span>
+        </button>
+    </header>
+
+    <!-- Timer Display -->
+    <main id="mainContent" class="px-6 pb-32">
+        <div class="flex flex-col items-center py-8">
+            <h2 id="timerDisplay" class="text-5xl font-extrabold tracking-tight mb-8 tabular-nums">00:00:00</h2>
+
+            <!-- Circular Punch In/Out Button -->
+            <div class="relative group">
+                <div class="absolute inset-0 bg-primary/20 rounded-full blur-2xl group-active:blur-3xl transition-all">
+                </div>
+                <button id="punchButton"
+                    class="relative size-44 rounded-full bg-primary flex flex-col items-center justify-center text-white glow-blue active:scale-95 hover:scale-105 transition-all duration-200 border-8 border-primary/30">
+                    <span id="punchIcon" class="material-symbols-outlined text-4xl mb-1"
+                        style="font-variation-settings: 'FILL' 1">play_arrow</span>
+                    <span id="punchText" class="text-sm font-bold uppercase tracking-widest">Punch In</span>
+                </button>
+            </div>
+
+            <p id="currentProject" class="mt-6 text-slate-500 dark:text-slate-400 text-sm font-medium text-center">
+                Ready to start tracking
+            </p>
+        </div>
+
+        <!-- Quick Stats Cards -->
+        <div class="grid grid-cols-2 gap-4 mb-8">
+            <div class="bg-white dark:bg-[#1c2630] p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800/50 hover:shadow-md transition-shadow cursor-pointer"
+                onclick="app.showTodayDetails()">
+                <div class="flex items-center gap-2 mb-2 text-primary">
+                    <span class="material-symbols-outlined text-lg">schedule</span>
+                    <p class="text-xs font-bold uppercase">Today's Total</p>
+                </div>
+                <p id="todayTotal" class="text-2xl font-bold">0h 0m</p>
+            </div>
+            <div class="bg-white dark:bg-[#1c2630] p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800/50 hover:shadow-md transition-shadow cursor-pointer"
+                onclick="app.showStreakDetails()">
+                <div class="flex items-center gap-2 mb-2 text-emerald-500">
+                    <span class="material-symbols-outlined text-lg">local_fire_department</span>
+                    <p class="text-xs font-bold uppercase">Active Streak</p>
+                </div>
+                <p id="streakDays" class="text-2xl font-bold">0 Days</p>
+            </div>
+        </div>
+
+        <!-- Weekly Progress -->
+        <div class="bg-white dark:bg-[#1c2630] p-5 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800/50 mb-8 hover:shadow-md transition-shadow cursor-pointer"
+            onclick="app.editWeeklyGoal()">
+            <div class="flex justify-between items-end mb-4">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                        Weekly Goal</h3>
+                    <p id="weeklyProgress" class="text-xl font-bold">0h <span
+                            class="text-slate-400 font-normal text-sm">/ 40h</span></p>
+                </div>
+                <div class="text-right">
+                    <span id="weeklyPercentage" class="text-primary font-bold text-sm">0%</span>
+                </div>
+            </div>
+            <div class="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div id="weeklyProgressBar" class="h-full bg-primary rounded-full transition-all duration-500"
+                    style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- Recent Sessions -->
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold">Recent Sessions</h3>
+            <button id="viewAllBtn" class="text-primary text-sm font-bold hover:underline"
+                onclick="app.showAllSessions()">View All</button>
+        </div>
+        <div id="recentSessions" class="space-y-3">
+            <div class="text-center py-8 text-slate-400">
+                <span class="material-symbols-outlined text-4xl mb-2 block">schedule</span>
+                <p class="text-sm">No sessions yet. Start tracking!</p>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="mt-8 grid grid-cols-2 gap-3">
+            <button onclick="app.exportData()"
+                class="flex items-center justify-center gap-2 px-4 py-3 bg-white dark:bg-[#1c2630] rounded-xl border border-slate-100 dark:border-slate-800/50 hover:border-primary transition-colors">
+                <span class="material-symbols-outlined text-primary">download</span>
+                <span class="text-sm font-bold">Export Data</span>
+            </button>
+            <button onclick="app.clearData()"
+                class="flex items-center justify-center gap-2 px-4 py-3 bg-white dark:bg-[#1c2630] rounded-xl border border-slate-100 dark:border-slate-800/50 hover:border-red-500 transition-colors">
+                <span class="material-symbols-outlined text-red-500">delete</span>
+                <span class="text-sm font-bold">Clear Data</span>
+            </button>
+        </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav
+        class="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-slate-900/80 ios-blur border-t border-slate-200 dark:border-slate-800/50 px-8 pt-4 pb-8 flex items-center justify-between">
+        <button class="flex flex-col items-center gap-1 text-primary transition-colors"
+            onclick="app.showPage('dashboard')">
+            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1">dashboard</span>
+            <span class="text-[10px] font-bold">Dashboard</span>
+        </button>
+        <button class="flex flex-col items-center gap-1 text-slate-400 hover:text-primary transition-colors"
+            onclick="app.showPage('reports')">
+            <span class="material-symbols-outlined">bar_chart</span>
+            <span class="text-[10px] font-bold">Reports</span>
+        </button>
+        <div class="relative -top-2">
+            <button id="addProjectBtn"
+                class="size-12 rounded-full bg-primary text-white shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-transform"
+                onclick="app.addProject()">
+                <span class="material-symbols-outlined text-2xl">add</span>
+            </button>
+        </div>
+        <button class="flex flex-col items-center gap-1 text-slate-400 hover:text-primary transition-colors"
+            onclick="app.showPage('projects')">
+            <span class="material-symbols-outlined">folder</span>
+            <span class="text-[10px] font-bold">Projects</span>
+        </button>
+        <button class="flex flex-col items-center gap-1 text-slate-400 hover:text-primary transition-colors"
+            onclick="app.showSettings()">
+            <span class="material-symbols-outlined">settings</span>
+            <span class="text-[10px] font-bold">Settings</span>
+        </button>
+    </nav>
+
+    <!-- iOS Home Indicator Spacing -->
+    <div class="h-6 fixed bottom-0 left-0 right-0 bg-transparent pointer-events-none"></div>
+
+    <script>
+        // Work Tracker App - Enhanced Version
+        class WorkTrackerApp {
+            constructor() {
+                this.activeSession = null;
+                this.timerInterval = null;
+                this.sessions = [];
+                this.projects = [];
+                this.weeklyGoal = 40;
+                this.userName = 'Alex Johnson';
+                this.currentPage = 'dashboard';
+
+                this.init();
+            }
+
+            init() {
+                this.loadData();
+                this.setupEventListeners();
+                this.updateUI();
+                this.registerServiceWorker();
+
+                // Check for active session and start timer if needed
+                if (this.activeSession) {
+                    this.startTimer();
+                }
+
+                // Auto-save every 30 seconds
+                setInterval(() => this.saveData(), 30000);
+            }
+
+            // Local Storage Management
+            loadData() {
+                try {
+                    const data = localStorage.getItem('workTrackerData');
+                    if (data) {
+                        const parsed = JSON.parse(data);
+                        this.sessions = parsed.sessions || [];
+                        this.projects = parsed.projects || [];
+                        this.activeSession = parsed.activeSession || null;
+                        this.weeklyGoal = parsed.weeklyGoal || 40;
+                        this.userName = parsed.userName || 'Alex Johnson';
+                    } else {
+                        // Initialize with default projects
+                        this.projects = [
+                            {
+                                id: this.generateId(),
+                                name: 'Brand Identity Design',
+                                color: 'blue',
+                                icon: 'palette',
+                                createdAt: new Date().toISOString()
+                            },
+                            {
+                                id: this.generateId(),
+                                name: 'Frontend Development',
+                                color: 'amber',
+                                icon: 'code',
+                                createdAt: new Date().toISOString()
+                            },
+                            {
+                                id: this.generateId(),
+                                name: 'Documentation',
+                                color: 'purple',
+                                icon: 'description',
+                                createdAt: new Date().toISOString()
+                            }
+                        ];
+                        this.saveData();
+                    }
+                } catch (error) {
+                    console.error('Error loading data:', error);
+                    this.showToast('Error loading data', 'error');
+                }
+            }
+
+            saveData() {
+                try {
+                    const data = {
+                        sessions: this.sessions,
+                        projects: this.projects,
+                        activeSession: this.activeSession,
+                        weeklyGoal: this.weeklyGoal,
+                        userName: this.userName,
+                        lastSaved: new Date().toISOString()
+                    };
+                    localStorage.setItem('workTrackerData', JSON.stringify(data));
+                } catch (error) {
+                    console.error('Error saving data:', error);
+                    this.showToast('Error saving data', 'error');
+                }
+            }
+
+            generateId() {
+                return Date.now().toString(36) + Math.random().toString(36).substr(2);
+            }
+
+            // Timer Functions
+            startTimer() {
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                }
+
+                this.timerInterval = setInterval(() => {
+                    this.updateTimerDisplay();
+                }, 1000);
+
+                this.updateTimerDisplay();
+            }
+
+            stopTimer() {
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                    this.timerInterval = null;
+                }
+            }
+
+            updateTimerDisplay() {
+                if (!this.activeSession) {
+                    document.getElementById('timerDisplay').textContent = '00:00:00';
+                    return;
+                }
+
+                const startTime = new Date(this.activeSession.startTime);
+                const now = new Date();
+                const diff = Math.floor((now - startTime) / 1000);
+
+                const hours = Math.floor(diff / 3600);
+                const minutes = Math.floor((diff % 3600) / 60);
+                const seconds = diff % 60;
+
+                const formatted = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                document.getElementById('timerDisplay').textContent = formatted;
+            }
+
+            // Session Management
+            punchIn() {
+                if (this.activeSession) {
+                    this.showToast('Already tracking! Punch out first.', 'warning');
+                    return;
+                }
+
+                const project = this.projects[0] || { name: 'General Work', icon: 'work', color: 'blue', id: this.generateId() };
+
+                this.activeSession = {
+                    id: this.generateId(),
+                    projectId: project.id,
+                    projectName: project.name,
+                    projectIcon: project.icon,
+                    projectColor: project.color,
+                    startTime: new Date().toISOString(),
+                    notes: ''
+                };
+
+                this.saveData();
+                this.startTimer();
+                this.updateUI();
+                this.showToast('Timer started! 🚀', 'success');
+            }
+
+            punchOut() {
+                if (!this.activeSession) {
+                    this.showToast('No active session to stop', 'warning');
+                    return;
+                }
+
+                const endTime = new Date();
+                const startTime = new Date(this.activeSession.startTime);
+                const durationMinutes = Math.floor((endTime - startTime) / 1000 / 60);
+
+                if (durationMinutes < 1) {
+                    this.showToast('Session too short (< 1 minute)', 'warning');
+                    this.activeSession = null;
+                    this.stopTimer();
+                    this.saveData();
+                    this.updateUI();
+                    return;
+                }
+
+                const completedSession = {
+                    ...this.activeSession,
+                    endTime: endTime.toISOString(),
+                    durationMinutes: durationMinutes,
+                    status: 'completed'
+                };
+
+                this.sessions.unshift(completedSession);
+                this.activeSession = null;
+
+                this.stopTimer();
+                this.saveData();
+                this.updateUI();
+                this.showToast(`Session completed! ${this.formatDuration(durationMinutes)} tracked ✅`, 'success');
+            }
+
+            // Statistics Calculations
+            getTodayTotal() {
+                const today = new Date().toISOString().split('T')[0];
+                let totalMinutes = 0;
+
+                // Add completed sessions
+                this.sessions.forEach(session => {
+                    const sessionDate = new Date(session.startTime).toISOString().split('T')[0];
+                    if (sessionDate === today && session.status === 'completed') {
+                        totalMinutes += session.durationMinutes;
+                    }
+                });
+
+                // Add active session time
+                if (this.activeSession) {
+                    const sessionDate = new Date(this.activeSession.startTime).toISOString().split('T')[0];
+                    if (sessionDate === today) {
+                        const now = new Date();
+                        const start = new Date(this.activeSession.startTime);
+                        totalMinutes += Math.floor((now - start) / 1000 / 60);
+                    }
+                }
+
+                return totalMinutes;
+            }
+
+            getWeeklyTotal() {
+                const weekStart = this.getWeekStart();
+                const weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekEnd.getDate() + 7);
+
+                let totalMinutes = 0;
+
+                this.sessions.forEach(session => {
+                    const sessionDate = new Date(session.startTime);
+                    if (sessionDate >= weekStart && sessionDate < weekEnd && session.status === 'completed') {
+                        totalMinutes += session.durationMinutes;
+                    }
+                });
+
+                // Add active session if in current week
+                if (this.activeSession) {
+                    const sessionDate = new Date(this.activeSession.startTime);
+                    if (sessionDate >= weekStart && sessionDate < weekEnd) {
+                        const now = new Date();
+                        const start = new Date(this.activeSession.startTime);
+                        totalMinutes += Math.floor((now - start) / 1000 / 60);
+                    }
+                }
+
+                return totalMinutes;
+            }
+
+            getStreak() {
+                if (this.sessions.length === 0) return 0;
+
+                const dates = new Set();
+                this.sessions.forEach(session => {
+                    if (session.status === 'completed') {
+                        const date = new Date(session.startTime).toISOString().split('T')[0];
+                        dates.add(date);
+                    }
+                });
+
+                const sortedDates = Array.from(dates).sort().reverse();
+                let streak = 0;
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                let checkDate = new Date(today);
+
+                // Check if today has work
+                const todayStr = checkDate.toISOString().split('T')[0];
+                if (!sortedDates.includes(todayStr)) {
+                    // If not, start from yesterday
+                    checkDate.setDate(checkDate.getDate() - 1);
+                }
+
+                // Count consecutive days
+                while (true) {
+                    const dateStr = checkDate.toISOString().split('T')[0];
+                    if (sortedDates.includes(dateStr)) {
+                        streak++;
+                        checkDate.setDate(checkDate.getDate() - 1);
+                    } else {
+                        break;
+                    }
+                }
+
+                return streak;
+            }
+
+            getWeekStart() {
+                const now = new Date();
+                const day = now.getDay();
+                const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+                const monday = new Date(now);
+                monday.setDate(diff);
+                monday.setHours(0, 0, 0, 0);
+                return monday;
+            }
+
+            formatDuration(minutes) {
+                const hours = Math.floor(minutes / 60);
+                const mins = minutes % 60;
+                if (hours === 0) return `${mins}m`;
+                if (mins === 0) return `${hours}h`;
+                return `${hours}h ${mins}m`;
+            }
+
+            // UI Updates
+            updateUI() {
+                this.updatePunchButton();
+                this.updateStats();
+                this.updateRecentSessions();
+                this.updateUserInfo();
+            }
+
+            updatePunchButton() {
+                const icon = document.getElementById('punchIcon');
+                const text = document.getElementById('punchText');
+                const currentProject = document.getElementById('currentProject');
+
+                if (this.activeSession) {
+                    icon.textContent = 'pause';
+                    text.textContent = 'Punch Out';
+                    currentProject.innerHTML = `Currently working on<br><span class="text-primary font-bold tracking-wide text-lg">${this.activeSession.projectName}</span>`;
+                } else {
+                    icon.textContent = 'play_arrow';
+                    text.textContent = 'Punch In';
+                    currentProject.textContent = 'Ready to start tracking';
+                }
+            }
+
+            updateStats() {
+                // Today's total
+                const todayMinutes = this.getTodayTotal();
+                document.getElementById('todayTotal').textContent = this.formatDuration(todayMinutes);
+
+                // Weekly progress
+                const weeklyMinutes = this.getWeeklyTotal();
+                const weeklyHours = Math.floor(weeklyMinutes / 60);
+                const percentage = Math.min(100, Math.round((weeklyHours / this.weeklyGoal) * 100));
+
+                document.getElementById('weeklyProgress').innerHTML = `${weeklyHours}h <span class="text-slate-400 font-normal text-sm">/ ${this.weeklyGoal}h</span>`;
+                document.getElementById('weeklyPercentage').textContent = `${percentage}%`;
+                document.getElementById('weeklyProgressBar').style.width = `${percentage}%`;
+
+                // Streak
+                const streak = this.getStreak();
+                document.getElementById('streakDays').textContent = `${streak} ${streak === 1 ? 'Day' : 'Days'}`;
+            }
+
+            updateRecentSessions() {
+                const container = document.getElementById('recentSessions');
+                const recentSessions = this.sessions.filter(s => s.status === 'completed').slice(0, 10);
+
+                if (recentSessions.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-8 text-slate-400">
+                            <span class="material-symbols-outlined text-4xl mb-2 block">schedule</span>
+                            <p class="text-sm">No sessions yet. Start tracking!</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = recentSessions.map(session => {
+                    const startTime = new Date(session.startTime);
+                    const endTime = new Date(session.endTime);
+
+                    // Format date
+                    const isToday = startTime.toDateString() === new Date().toDateString();
+                    const yesterday = new Date();
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    const isYesterday = startTime.toDateString() === yesterday.toDateString();
+
+                    let dateStr;
+                    if (isToday) {
+                        dateStr = startTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) + ' - ' + endTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                    } else if (isYesterday) {
+                        dateStr = 'Yesterday, ' + startTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                    } else {
+                        dateStr = startTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ', ' + startTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                    }
+
+                    const colorMap = {
+                        'blue': 'bg-primary/10 text-primary',
+                        'amber': 'bg-amber-500/10 text-amber-500',
+                        'purple': 'bg-purple-500/10 text-purple-500',
+                        'green': 'bg-emerald-500/10 text-emerald-500',
+                        'red': 'bg-red-500/10 text-red-500'
+                    };
+                    const colorClass = colorMap[session.projectColor] || 'bg-primary/10 text-primary';
+
+                    return `
+                        <div class="flex items-center gap-4 bg-white dark:bg-[#1c2630] p-4 rounded-xl border border-slate-100 dark:border-slate-800/50 hover:border-primary transition-colors cursor-pointer fade-in" onclick="app.showSessionDetails('${session.id}')">
+                            <div class="size-10 flex items-center justify-center rounded-lg ${colorClass}">
+                                <span class="material-symbols-outlined">${session.projectIcon || 'work'}</span>
+                            </div>
+                            <div class="flex-1">
+                                <h4 class="text-sm font-bold">${session.projectName}</h4>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">${dateStr}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm font-bold">${this.formatDuration(session.durationMinutes)}</p>
+                                <p class="text-[10px] text-emerald-500 font-bold uppercase">Completed</p>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            updateUserInfo() {
+                document.getElementById('userName').textContent = this.userName;
+                const initials = this.userName.split(' ').map(n => n[0]).join('');
+                document.getElementById('userAvatar').textContent = initials;
+            }
+
+            // Event Listeners
+            setupEventListeners() {
+                document.getElementById('punchButton').addEventListener('click', () => {
+                    if (this.activeSession) {
+                        this.punchOut();
+                    } else {
+                        this.punchIn();
+                    }
+                });
+
+                // Update stats every minute
+                setInterval(() => {
+                    if (this.activeSession) {
+                        this.updateStats();
+                    }
+                }, 60000);
+
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === ' ' && e.ctrlKey) {
+                        e.preventDefault();
+                        if (this.activeSession) {
+                            this.punchOut();
+                        } else {
+                            this.punchIn();
+                        }
+                    }
+                });
+            }
+
+            // UI Actions
+            showToast(message, type = 'info') {
+                const toast = document.createElement('div');
+                toast.className = 'toast';
+                toast.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined">${type === 'success' ? 'check_circle' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'info'}</span>
+                        <span>${message}</span>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 3000);
+            }
+
+            showModal(title, content, actions = []) {
+                const modal = document.createElement('div');
+                modal.className = 'modal-overlay';
+                modal.innerHTML = `
+                    <div class="modal-content">
+                        <h3 class="text-xl font-bold mb-4">${title}</h3>
+                        <div class="mb-6">${content}</div>
+                        <div class="flex gap-3 justify-end">
+                            ${actions.map(action => `
+                                <button onclick="${action.onClick}" class="px-4 py-2 rounded-lg ${action.primary ? 'bg-primary text-white' : 'bg-slate-700 text-white'} hover:opacity-80 transition-opacity">
+                                    ${action.label}
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) modal.remove();
+                });
+                document.body.appendChild(modal);
+                return modal;
+            }
+
+            showPage(page) {
+                this.currentPage = page;
+                this.showToast(`${page.charAt(0).toUpperCase() + page.slice(1)} - Coming soon!`, 'info');
+            }
+
+            showSettings() {
+                const modal = this.showModal('Settings', `
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-bold mb-2">Your Name</label>
+                            <input type="text" id="settingsName" value="${this.userName}" class="w-full px-4 py-2 rounded-lg bg-slate-700 border border-slate-600 focus:border-primary outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-2">Weekly Goal (hours)</label>
+                            <input type="number" id="settingsGoal" value="${this.weeklyGoal}" min="1" max="168" class="w-full px-4 py-2 rounded-lg bg-slate-700 border border-slate-600 focus:border-primary outline-none">
+                        </div>
+                    </div>
+                `, [
+                    { label: 'Cancel', onClick: 'this.closest(\'.modal-overlay\').remove()' },
+                    { label: 'Save', primary: true, onClick: 'app.saveSettings(); this.closest(\'.modal-overlay\').remove()' }
+                ]);
+            }
+
+            saveSettings() {
+                const name = document.getElementById('settingsName')?.value;
+                const goal = parseInt(document.getElementById('settingsGoal')?.value);
+
+                if (name) this.userName = name;
+                if (goal && goal > 0) this.weeklyGoal = goal;
+
+                this.saveData();
+                this.updateUI();
+                this.showToast('Settings saved!', 'success');
+            }
+
+            editWeeklyGoal() {
+                this.showSettings();
+            }
+
+            addProject() {
+                const modal = this.showModal('Add Project', `
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-bold mb-2">Project Name</label>
+                            <input type="text" id="projectName" placeholder="My Project" class="w-full px-4 py-2 rounded-lg bg-slate-700 border border-slate-600 focus:border-primary outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-2">Icon</label>
+                            <select id="projectIcon" class="w-full px-4 py-2 rounded-lg bg-slate-700 border border-slate-600 focus:border-primary outline-none">
+                                <option value="work">Work</option>
+                                <option value="code">Code</option>
+                                <option value="palette">Design</option>
+                                <option value="description">Documentation</option>
+                                <option value="school">Learning</option>
+                                <option value="fitness_center">Exercise</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-2">Color</label>
+                            <select id="projectColor" class="w-full px-4 py-2 rounded-lg bg-slate-700 border border-slate-600 focus:border-primary outline-none">
+                                <option value="blue">Blue</option>
+                                <option value="amber">Amber</option>
+                                <option value="purple">Purple</option>
+                                <option value="green">Green</option>
+                                <option value="red">Red</option>
+                            </select>
+                        </div>
+                    </div>
+                `, [
+                    { label: 'Cancel', onClick: 'this.closest(\'.modal-overlay\').remove()' },
+                    { label: 'Add Project', primary: true, onClick: 'app.saveNewProject(); this.closest(\'.modal-overlay\').remove()' }
+                ]);
+            }
+
+            saveNewProject() {
+                const name = document.getElementById('projectName')?.value;
+                const icon = document.getElementById('projectIcon')?.value;
+                const color = document.getElementById('projectColor')?.value;
+
+                if (!name) {
+                    this.showToast('Please enter a project name', 'warning');
+                    return;
+                }
+
+                this.projects.push({
+                    id: this.generateId(),
+                    name,
+                    icon,
+                    color,
+                    createdAt: new Date().toISOString()
+                });
+
+                this.saveData();
+                this.showToast('Project added!', 'success');
+            }
+
+            showAllSessions() {
+                this.showToast('All sessions view - Coming soon!', 'info');
+            }
+
+            showSessionDetails(sessionId) {
+                const session = this.sessions.find(s => s.id === sessionId);
+                if (!session) return;
+
+                const start = new Date(session.startTime);
+                const end = new Date(session.endTime);
+
+                this.showModal('Session Details', `
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-primary text-3xl">${session.projectIcon}</span>
+                            <div>
+                                <h4 class="font-bold">${session.projectName}</h4>
+                                <p class="text-sm text-slate-400">${start.toLocaleDateString()}</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 pt-4">
+                            <div>
+                                <p class="text-xs text-slate-400">Start Time</p>
+                                <p class="font-bold">${start.toLocaleTimeString()}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-400">End Time</p>
+                                <p class="font-bold">${end.toLocaleTimeString()}</p>
+                            </div>
+                            <div class="col-span-2">
+                                <p class="text-xs text-slate-400">Duration</p>
+                                <p class="font-bold text-2xl text-primary">${this.formatDuration(session.durationMinutes)}</p>
+                            </div>
+                        </div>
+                    </div>
+                `, [
+                    { label: 'Close', primary: true, onClick: 'this.closest(\'.modal-overlay\').remove()' }
+                ]);
+            }
+
+            showTodayDetails() {
+                const today = new Date().toISOString().split('T')[0];
+                const todaySessions = this.sessions.filter(s => {
+                    const sessionDate = new Date(s.startTime).toISOString().split('T')[0];
+                    return sessionDate === today && s.status === 'completed';
+                });
+
+                const total = this.getTodayTotal();
+
+                this.showModal('Today\'s Summary', `
+                    <div class="space-y-4">
+                        <div class="text-center">
+                            <p class="text-4xl font-bold text-primary">${this.formatDuration(total)}</p>
+                            <p class="text-sm text-slate-400">Total time tracked today</p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold mb-2">${todaySessions.length} Sessions</p>
+                            <div class="space-y-2 max-h-60 overflow-y-auto">
+                                ${todaySessions.map(s => `
+                                    <div class="flex justify-between items-center p-2 bg-slate-700 rounded-lg">
+                                        <span class="text-sm">${s.projectName}</span>
+                                        <span class="text-sm font-bold">${this.formatDuration(s.durationMinutes)}</span>
+                                    </div>
+                                `).join('') || '<p class="text-center text-slate-400 py-4">No completed sessions yet</p>'}
+                            </div>
+                        </div>
+                    </div>
+                `, [
+                    { label: 'Close', primary: true, onClick: 'this.closest(\'.modal-overlay\').remove()' }
+                ]);
+            }
+
+            showStreakDetails() {
+                const streak = this.getStreak();
+                this.showModal('Work Streak', `
+                    <div class="text-center space-y-4">
+                        <div class="text-6xl">🔥</div>
+                        <div>
+                            <p class="text-4xl font-bold text-primary">${streak}</p>
+                            <p class="text-lg text-slate-400">${streak === 1 ? 'Day' : 'Days'} Streak</p>
+                        </div>
+                        <p class="text-sm text-slate-400">
+                            ${streak > 0 ? `Keep it up! You've worked ${streak} consecutive ${streak === 1 ? 'day' : 'days'}.` : 'Start tracking to build your streak!'}
+                        </p>
+                    </div>
+                `, [
+                    { label: 'Close', primary: true, onClick: 'this.closest(\'.modal-overlay\').remove()' }
+                ]);
+            }
+
+            exportData() {
+                const data = {
+                    sessions: this.sessions,
+                    projects: this.projects,
+                    userName: this.userName,
+                    weeklyGoal: this.weeklyGoal,
+                    exportDate: new Date().toISOString()
+                };
+
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `work-tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+
+                this.showToast('Data exported successfully!', 'success');
+            }
+
+            clearData() {
+                if (confirm('Are you sure you want to clear all data? This cannot be undone!')) {
+                    localStorage.removeItem('workTrackerData');
+                    location.reload();
+                }
+            }
+
+            toggleTheme() {
+                document.documentElement.classList.toggle('dark');
+                const icon = document.querySelector('#themeToggle .material-symbols-outlined');
+                icon.textContent = document.documentElement.classList.contains('dark') ? 'light_mode' : 'dark_mode';
+                this.showToast('Theme toggled!', 'info');
+            }
+
+            // Service Worker Registration
+            registerServiceWorker() {
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.register('service-worker.js')
+                        .then(reg => console.log('Service Worker registered'))
+                        .catch(err => console.log('Service Worker registration failed'));
+                }
+            }
+        }
+
+        // Initialize app when DOM is ready
+        let app;
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                app = new WorkTrackerApp();
+            });
+        } else {
+            app = new WorkTrackerApp();
+        }
+    </script>
+</body>
+
+</html>
